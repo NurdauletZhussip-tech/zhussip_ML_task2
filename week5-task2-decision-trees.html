@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOP 3231 · Task 2 — Decision Trees</title>
+<style>
+  :root {
+    --navy: #1b2a4a;
+    --blue: #2f5fa8;
+    --blue-light: #eaf1fb;
+    --ink: #1f2430;
+    --muted: #5b6472;
+    --border: #d8dee8;
+    --code-bg: #f4f6fa;
+    --ok: #1f7a4d;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #ffffff;
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.55;
+  }
+  .page {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 48px 28px 80px;
+  }
+  header.masthead {
+    border-bottom: 3px solid var(--navy);
+    padding-bottom: 18px;
+    margin-bottom: 32px;
+  }
+  .kicker {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 12px;
+    color: var(--blue);
+    font-weight: 700;
+    margin: 0 0 6px;
+  }
+  h1 {
+    font-size: 27px;
+    margin: 0 0 8px;
+    color: var(--navy);
+    line-height: 1.25;
+  }
+  .meta {
+    color: var(--muted);
+    font-size: 13.5px;
+  }
+  .meta span:not(:last-child)::after {
+    content: "•";
+    margin: 0 8px;
+    color: var(--border);
+  }
+  h2 {
+    font-size: 18px;
+    color: var(--navy);
+    margin: 40px 0 6px;
+    padding-top: 4px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  h2 .step-no {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--blue);
+    color: #fff;
+    font-size: 12.5px;
+    font-weight: 700;
+    flex: none;
+  }
+  h2 .pts {
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--blue);
+    background: var(--blue-light);
+    border-radius: 999px;
+    padding: 2px 10px;
+    white-space: nowrap;
+  }
+  h3 { font-size: 14.5px; color: var(--navy); margin: 20px 0 6px; }
+  p { margin: 8px 0; }
+  .lead {
+    font-size: 15.5px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  ul, ol { margin: 8px 0; padding-left: 22px; }
+  li { margin: 4px 0; }
+  code {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    color: #b3261e;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--blue);
+    border-radius: 6px;
+    padding: 12px 14px;
+    overflow-x: auto;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 10px 0;
+  }
+  pre code {
+    background: none;
+    padding: 0;
+    color: var(--ink);
+  }
+  pre .comment { color: var(--muted); }
+  .platform-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--blue);
+    background: var(--blue-light);
+    border-radius: 4px;
+    padding: 2px 8px;
+    display: inline-block;
+    margin: 10px 0 4px;
+  }
+  .callout {
+    background: var(--blue-light);
+    border: 1px solid #c9dcf3;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 14px 0;
+    font-size: 14px;
+  }
+  .callout.note::before { content: "Note. "; font-weight: 700; color: var(--navy); }
+  .callout.check::before { content: "Checkpoint. "; font-weight: 700; color: var(--ok); }
+  .callout.scope::before { content: "Scope note. "; font-weight: 700; color: #8a5a00; }
+  .callout.scope { background: #fff8ea; border-color: #f0dca9; }
+  .callout.warn::before { content: "Known quirk. "; font-weight: 700; color: #8a5a00; }
+  .callout.warn { background: #fff8ea; border-color: #f0dca9; }
+  .callout.report::before { content: "Report in your notebook. "; font-weight: 700; color: var(--navy); }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+    font-size: 13.5px;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 7px 10px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th { background: var(--blue-light); color: var(--navy); font-weight: 700; }
+  tfoot td { font-weight: 700; background: var(--code-bg); }
+  footer {
+    margin-top: 48px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  @media print {
+    body { font-size: 12px; }
+    .page { padding: 0; max-width: none; }
+    pre { break-inside: avoid; }
+    h2 { break-after: avoid; }
+  }
+  @media (prefers-color-scheme: dark) {
+    body { background: #14171f; color: #e4e7ee; }
+    .page { background: #14171f; }
+    header.masthead { border-bottom-color: #4c6fb3; }
+    h1, h2, h3 { color: #9db8ea; }
+    .meta, .lead, footer { color: #9aa2b2; }
+    code { background: #1f2430; color: #ff8a7a; }
+    pre { background: #1a1e28; border-color: #2b3140; }
+    pre code { color: #e4e7ee; }
+    .callout { background: #1c2740; border-color: #2c3f63; }
+    .callout.scope, .callout.warn { background: #2a2416; border-color: #4a3c1a; }
+    th { background: #1c2740; color: #9db8ea; }
+    th, td { border-color: #2b3140; }
+    tfoot td { background: #1a1e28; }
+    .platform-label, h2 .pts { background: #1c2740; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="masthead">
+    <p class="kicker">MOP 3231 · Machine Learning (Python)</p>
+    <h1>Task 2 — Decision Trees: Entropy, Over-fitting and a Logistic Regression Comparison</h1>
+    <p class="meta">
+      <span>Topic 4: decision trees, compared with logistic regression</span>
+      <span><strong>Graded — Task 2, 25 points</strong></span>
+      <span>Due: Friday 9 October 2026, 23:59 (Canvas time, UTC+5)</span>
+      <span>Instructor: Baubek Ukibassov</span>
+    </p>
+  </header>
+
+  <p class="lead">
+    In the lecture you grew a tree by hand on 14 patients. Here you do it twice more: once by hand on a
+    12-row table, to see what information gain really rewards, and once in code on 297 real patients,
+    to see what a tree does when nothing stops it from growing. Then you ask the question that matters
+    in practice: is the tree any better than the logistic regression from last week?
+  </p>
+
+  <div class="callout note">
+    The data are the Cleveland subset of the UCI <em>Heart Disease</em> database (Detrano et al., 1989;
+    collected by A. Janosi, W. Steinbrunn, M. Pfisterer and R. Detrano): 297 patients with complete
+    records, 46% of them with narrowed coronary arteries. It is a teaching dataset, not clinical
+    evidence: do not draw medical conclusions from your model. The 12-patient table in Part 1 is
+    <strong>synthetic</strong>, made up for this task.
+  </div>
+
+  <div class="callout note">
+    This is individual work. Your train/test split and your cross-validation folds are seeded with the
+    <strong>last 4 digits of your student ID</strong>, so your numbers will differ from a classmate's
+    and the best depth for you is not the best depth for them. Identical numbers in two submissions
+    will be looked at. You are graded on method and on whether your conclusions follow from <em>your</em>
+    numbers, not on matching a reference value.
+  </div>
+
+  <div class="callout scope">
+    Entropy, information gain and growing a tree by hand come from the Week 5 lecture; logistic regression
+    from the Week 4 lecture; cross-validation was used in Lab #4. The code snippets below show tools on
+    this task's own data and are not the answers. For details, use the scikit-learn documentation.
+  </div>
+
+  <h2><span class="step-no">0</span>Start from the starter repository, set up, load the data</h2>
+  <div class="callout note">
+    Starter repository (public): <a href="https://github.com/unreal-kz/task-02-ML-course">https://github.com/unreal-kz/task-02-ML-course</a>.
+    It holds <code>data/heart_disease.csv</code>, <code>requirements.txt</code>, a <code>README.md</code> with the licence and
+    citation of the data, and a <code>.gitignore</code>. You do not push to it: you make your own repository, as in Task 1.
+    (A copy of the CSV is also in the Week 05 module in Canvas.)
+  </div>
+  <p>On the repository page choose <strong>Code → Download ZIP</strong> and unzip it into a new folder named
+  <code>lastname_ML_task_2</code> (replace <code>lastname</code> with your own). Then create the environment inside it:</p>
+  <span class="platform-label">macOS / Linux</span>
+  <pre><code>cd lastname_ML_task_2
+python3 -m venv .lastname_ML_task_2
+source .lastname_ML_task_2/bin/activate</code></pre>
+  <span class="platform-label">Windows (PowerShell)</span>
+  <pre><code>cd lastname_ML_task_2
+python -m venv .lastname_ML_task_2
+.lastname_ML_task_2\Scripts\Activate.ps1</code></pre>
+  <pre><code>pip install -r requirements.txt</code></pre>
+  <p>Start your git history. The <code>.gitignore</code> from the starter already excludes the environment folder
+  (<code>.lastname_ML_task_2/</code>) and notebook checkpoints:</p>
+  <pre><code>git init
+git branch -M main
+git add .
+git commit -m "Initial commit: starter files"</code></pre>
+  <p>Work in a Jupyter notebook that uses this environment as its kernel (Jupyter stays out of
+  <code>requirements.txt</code>), saved as <code>lastname_task2.ipynb</code> in the root of the folder, next to <code>data/</code>.
+  Commit at least three times as you go — for example after Parts 2, 4 and 5 — with messages that say what changed.
+  Start the notebook with these two cells; replace <code>YOUR_ID</code> with the last four digits of your student ID as a
+  plain integer (<code>0421</code> → <code>421</code>) and write the number in a markdown cell as well.</p>
+  <pre class="run"><code>import sys
+
+import numpy
+import pandas
+import sklearn
+
+print(sys.version.split()[0], numpy.__version__, pandas.__version__, sklearn.__version__)</code></pre>
+  <pre class="run"><code>import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+
+SEED = YOUR_ID
+
+data = pd.read_csv(&quot;data/heart_disease.csv&quot;)
+feature_names = [c for c in data.columns if c != &quot;disease&quot;]
+X, y = data[feature_names].to_numpy(), data[&quot;disease&quot;].to_numpy()
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.3, stratify=y, random_state=SEED
+)
+print(data.shape, round(y.mean(), 3), X_train.shape, X_test.shape)</code></pre>
+  <div class="callout check">
+    The last line prints <code>(297, 14) 0.461 (207, 13) (90, 13)</code> for every student ID.
+  </div>
+  <table>
+    <thead><tr><th>Column</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>age</code></td><td>Age in years</td></tr>
+      <tr><td><code>sex</code></td><td>1 = male, 0 = female</td></tr>
+      <tr><td><code>cp</code></td><td>Chest pain type: 1 typical angina, 2 atypical angina, 3 non-anginal pain, 4 asymptomatic</td></tr>
+      <tr><td><code>trestbps</code></td><td>Resting blood pressure on admission, mm Hg</td></tr>
+      <tr><td><code>chol</code></td><td>Serum cholesterol, mg/dl</td></tr>
+      <tr><td><code>fbs</code></td><td>Fasting blood sugar &gt; 120 mg/dl: 1 = yes, 0 = no</td></tr>
+      <tr><td><code>restecg</code></td><td>Resting ECG: 0 normal, 1 ST-T wave abnormality, 2 probable or definite left ventricular hypertrophy</td></tr>
+      <tr><td><code>thalach</code></td><td>Maximum heart rate achieved</td></tr>
+      <tr><td><code>exang</code></td><td>Exercise-induced angina: 1 = yes, 0 = no</td></tr>
+      <tr><td><code>oldpeak</code></td><td>ST depression induced by exercise relative to rest</td></tr>
+      <tr><td><code>slope</code></td><td>Slope of the peak-exercise ST segment: 1 upsloping, 2 flat, 3 downsloping</td></tr>
+      <tr><td><code>ca</code></td><td>Number of major vessels (0–3) coloured by fluoroscopy</td></tr>
+      <tr><td><code>thal</code></td><td>3 = normal, 6 = fixed defect, 7 = reversible defect</td></tr>
+      <tr><td><code>disease</code></td><td><strong>Target.</strong> 1 = narrowing of more than 50% in any major vessel, 0 = no</td></tr>
+    </tbody>
+  </table>
+  <p>The coded columns (<code>cp</code>, <code>restecg</code>, <code>slope</code>, <code>thal</code>) are used as plain numbers, so a
+  split such as <code>cp &lt;= 3.5</code> is legal. Do not one-hot encode them in this task.</p>
+  <p>Use a markdown heading <code>Part 1</code> … <code>Part 5</code> in your notebook for each part below, with your written answers
+  under it, so the grader can find them.</p>
+
+  <h2><span class="step-no">1</span>Entropy and information gain by hand<span class="pts">4 pts</span></h2>
+  <p>Twelve synthetic patients, four yes/no features, and whether they have the disease. For a node with class
+  proportions <i>p</i><sub>c</sub>, the entropy is <i>H</i> = −Σ <i>p</i><sub>c</sub> log<sub>2</sub> <i>p</i><sub>c</sub>
+  (with 0·log<sub>2</sub>0 = 0), and the information gain of splitting on a feature is the parent's entropy minus the
+  size-weighted entropy of the children.</p>
+  <table>
+<thead><tr><th>Patient</th><th><code>age_55_plus</code></th><th><code>exercise_angina</code></th><th><code>male</code></th><th><code>high_bp</code></th><th><code>disease</code></th></tr></thead>
+<tbody>
+<tr><td>p1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td></tr>
+<tr><td>p2</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td></tr>
+<tr><td>p3</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td></tr>
+<tr><td>p4</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td></tr>
+<tr><td>p5</td><td>1</td><td>0</td><td>0</td><td>1</td><td>1</td></tr>
+<tr><td>p6</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td></tr>
+<tr><td>p7</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td></tr>
+<tr><td>p8</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td></tr>
+<tr><td>p9</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td></tr>
+<tr><td>p10</td><td>0</td><td>0</td><td>0</td><td>1</td><td>0</td></tr>
+<tr><td>p11</td><td>0</td><td>0</td><td>0</td><td>1</td><td>0</td></tr>
+<tr><td>p12</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+</tbody>
+</table>
+  <pre class="run"><code>toy = pd.DataFrame({
+    &quot;age_55_plus&quot;: [1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0],
+    &quot;exercise_angina&quot;: [1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+    &quot;male&quot;: [1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0],
+    &quot;high_bp&quot;: [1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0],
+    &quot;disease&quot;: [1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+})</code></pre>
+  <ol>
+    <li><strong>Parent entropy.</strong> Compute the entropy of the 12 patients by hand. Show the formula with the numbers in it.</li>
+    <li><strong>Root.</strong> Compute the information gain of each of the four features by hand, show the working for each, and name the
+    feature the tree would put at the root.</li>
+    <li><strong>One level down.</strong> Take the branch of the root that is still impure. Compute the gains of the remaining three features
+    <em>inside that branch</em>. Which one is chosen? Compare it with the gain the same feature had at the root, and say in one or two
+    sentences how a feature can look useless at the root and still be the best choice below it.</li>
+  </ol>
+  <div class="callout report">
+    The entropy, the table of four gains, the named root, the three gains of question 3 and your explanation. Hand
+    calculations can be written in markdown cells (plain text or LaTeX) or typed as arithmetic in code cells; a bare number
+    with no working does not earn the point.
+  </div>
+
+  <h2><span class="step-no">2</span>A decision tree from scratch<span class="pts">6 pts</span></h2>
+  <p>Write the learning algorithm from the lecture in NumPy: choose the attribute and threshold with the highest information gain,
+  split, and repeat inside each branch. Use these signatures (put a short docstring on each).</p>
+  <pre class="run"><code>def entropy(y):
+    &quot;&quot;&quot;Entropy in bits of an array of integer class labels.&quot;&quot;&quot;
+    raise NotImplementedError
+
+
+def information_gain(y, left):
+    &quot;&quot;&quot;Entropy of y minus the size-weighted entropy of y[left] and y[~left]; left is a boolean mask.&quot;&quot;&quot;
+    raise NotImplementedError
+
+
+def best_split(X, y, min_samples_leaf=1):
+    &quot;&quot;&quot;Return (feature_index, threshold, gain) of the best split, or None if no valid split exists.&quot;&quot;&quot;
+    raise NotImplementedError
+
+
+def build_tree(X, y, max_depth=None, min_samples_leaf=1, depth=0):
+    &quot;&quot;&quot;Grow a tree recursively and return it as nested dicts (or any structure you like).&quot;&quot;&quot;
+    raise NotImplementedError
+
+
+def predict_tree(tree, X):
+    &quot;&quot;&quot;Return one predicted label per row of X.&quot;&quot;&quot;
+    raise NotImplementedError</code></pre>
+  <p>Rules your code must follow, so that results can be compared:</p>
+  <ul>
+    <li>Candidate thresholds for a feature are the <strong>midpoints between consecutive distinct sorted values</strong>; rows with
+    <code>x &lt;= threshold</code> go left.</li>
+    <li>A split is valid only if both children hold at least <code>min_samples_leaf</code> rows. Ties between equal gains go to the
+    lower feature index, then the lower threshold.</li>
+    <li>A node becomes a leaf when it is pure, when <code>depth == max_depth</code>, or when no valid split exists. A leaf predicts
+    its majority class (a tie goes to the smaller label).</li>
+  </ul>
+  <p>Then check your code against scikit-learn on your training split. Note that scikit-learn's default criterion is
+  <code>gini</code>; the lecture used entropy, so you must ask for it:</p>
+  <pre class="run"><code>from sklearn.tree import DecisionTreeClassifier
+
+ref = DecisionTreeClassifier(criterion=&quot;entropy&quot;, max_depth=1, random_state=SEED).fit(X_train, y_train)
+print(feature_names[ref.tree_.feature[0]], ref.tree_.threshold[0])</code></pre>
+  <ol>
+    <li>Run <code>entropy</code> and <code>information_gain</code> on the toy table of Part 1: do they reproduce your hand values?</li>
+    <li>Does your <code>best_split</code> on <code>X_train, y_train</code> choose the same feature and threshold as the line above?</li>
+    <li>For <code>max_depth</code> = 1, 2, 3, 4, 5 and unlimited, build your tree and scikit-learn's
+    (<code>criterion="entropy"</code>, same depth, <code>random_state=SEED</code>) and print the fraction of <em>test</em> rows on which
+    the two predict the same label. If it is below 100% anywhere, explain in a sentence what could cause it.</li>
+  </ol>
+  <div class="callout report">
+    The three answers above with their numbers, in a table for question 3. Your functions must be in the notebook, not imported
+    from a file.
+  </div>
+
+  <h2><span class="step-no">3</span>How deep should the tree be?<span class="pts">6 pts</span></h2>
+  <p>A tree that is allowed to grow until every leaf is pure can memorise the training set. In this part you measure how much that
+  costs, using only the training split. <strong>The test split is not touched until step 3e.</strong></p>
+  <pre class="run"><code>from sklearn.model_selection import StratifiedKFold, cross_validate
+from sklearn.tree import DecisionTreeClassifier
+
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=SEED)
+model = DecisionTreeClassifier(criterion=&quot;entropy&quot;, max_depth=3, random_state=SEED)
+scores = cross_validate(model, X_train, y_train, cv=cv, scoring=&quot;accuracy&quot;, return_train_score=True)
+print(scores[&quot;train_score&quot;].mean(), scores[&quot;test_score&quot;].mean(), scores[&quot;test_score&quot;].std())</code></pre>
+  <ol type="a">
+    <li><strong>Depth sweep.</strong> Repeat for <code>max_depth</code> in 1, 2, 3, 4, 5, 6, 8, 10 and <code>None</code>. Tabulate, per depth, the
+    number of leaves, the mean training accuracy, the mean CV accuracy and the standard deviation of the CV accuracy over the folds.</li>
+    <li><strong>Plot.</strong> Training and CV accuracy against depth (with error bars for the CV standard deviation), axes labelled.</li>
+    <li><strong>Choose a depth.</strong> Write your selection rule in a markdown cell, then apply it. The rule must take the spread over
+    the folds into account, not only the highest mean. Say whether the winning depth is clearly better than its neighbours.</li>
+    <li><strong>A second brake.</strong> Repeat the sweep with <code>min_samples_leaf</code> in 1, 2, 5, 10, 20, 40 and unlimited depth. In
+    one or two sentences, compare the two ways of limiting a tree.</li>
+    <li><strong>Test once.</strong> Fit your chosen model on the full training split and report its accuracy on the test split, together
+    with the standard error <code>sqrt(p·(1−p)/n)</code> of that accuracy.</li>
+  </ol>
+  <div class="callout report">
+    The table, the plot, the rule with the chosen depth and a one-sentence justification, the comparison of the two brakes and the test accuracy with its
+    standard error. Say in one sentence what the gap between training and CV accuracy at <code>max_depth=None</code> tells you.
+  </div>
+
+  <h2><span class="step-no">4</span>Tree or logistic regression?<span class="pts">5 pts</span></h2>
+  <p>Compare your tree with logistic regression on the same folds. The scaler must be fitted inside each training fold, so put it in a
+  pipeline.</p>
+  <pre class="run"><code>from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+
+logreg = make_pipeline(StandardScaler(), LogisticRegression(max_iter=5000))
+scores = cross_validate(logreg, X_train, y_train, cv=cv, scoring=(&quot;accuracy&quot;, &quot;f1&quot;))
+print(scores[&quot;test_accuracy&quot;].mean(), scores[&quot;test_accuracy&quot;].std(), scores[&quot;test_f1&quot;].mean())</code></pre>
+  <div class="callout warn">
+    On an Apple Silicon Mac, <code>scikit-learn</code> may print <code>RuntimeWarning: divide by zero / overflow / invalid value
+    encountered in matmul</code> when you fit <code>LogisticRegression</code>. This is the same display-only quirk of NumPy 2.0's Accelerate
+    BLAS backend as in Lab #3 and Task 1; it does not change your results (the instructor checked that three different solvers agree on the
+    coefficients to about three decimals). Do not suppress warnings globally — that would also hide warnings that <em>do</em> mean something.
+  </div>
+  <ol type="a">
+    <li><strong>Cross-validation.</strong> On the training split and the folds <code>cv</code>, report CV accuracy (mean ± std) and CV F1 (mean) for
+    three models: your tree from step 3, an unlimited-depth tree, and logistic regression.</li>
+    <li><strong>Does a tree need scaling?</strong> Fit your chosen tree on <code>X_train</code> and again on
+    <code>StandardScaler().fit(X_train).transform(X_train)</code>; predict the test rows with each (transforming <code>X_test</code> with the same
+    scaler for the second). Report the fraction of test rows with the same prediction and explain why you got it.</li>
+    <li><strong>Hold-out, once.</strong> Fit the tree and the logistic regression on the full training split and report accuracy, F1 and the
+    confusion matrix of each on the test split.</li>
+    <li><strong>Conclusion.</strong> Which model would you use on this data, and how sure are you? Use the numbers from (a) and (c), including the
+    fold spread and the standard error of the test accuracy. Say which differences you cannot tell apart from noise.</li>
+  </ol>
+  <div class="callout report">
+    The CV table, the agreement fraction with its explanation, the hold-out metrics and confusion matrices, and a conclusion of at most
+    six sentences that refers to your own numbers.
+  </div>
+
+  <h2><span class="step-no">5</span>Reading a tree, and reproducibility<span class="pts">4 pts</span></h2>
+  <pre class="run"><code>from sklearn.tree import export_text
+
+shallow = DecisionTreeClassifier(criterion=&quot;entropy&quot;, max_depth=3, random_state=SEED).fit(X_train, y_train)
+print(export_text(shallow, feature_names=feature_names))
+ranked = sorted(zip(shallow.feature_importances_, feature_names), reverse=True)
+print([(name, round(float(imp), 3)) for imp, name in ranked[:5]])</code></pre>
+  <ol>
+    <li><strong>Two rules.</strong> From the printed depth-3 tree, translate one root-to-leaf path that predicts disease and one that predicts no
+    disease into plain English (for example “if … and … then …”), with the number of training patients that reach each leaf. Use
+    <code>shallow.tree_.n_node_samples</code> or <code>plot_tree</code> to get the counts.</li>
+    <li><strong>Importances.</strong> Name the five most important features of your depth-3 tree and give one limitation of
+    <code>feature_importances_</code> as a measure of how much a feature matters.</li>
+    <li><strong>Same class on both sides.</strong> A tree can contain a split whose two children predict the same class. Explain in two or three
+    sentences why scikit-learn makes such a split, and what quantity it is optimising.</li>
+  </ol>
+  <div class="callout report">
+    The two rules with counts, the five importances and the limitation, the explanation. The first cell prints the library versions, your <code>SEED</code>
+    is written in a markdown cell, the notebook runs from top to bottom without errors after <em>Restart &amp; Run All</em>, and your
+    repository has at least three commits.
+  </div>
+
+  <h2>What to submit</h2>
+  <p>Submit <strong>one link</strong> to <strong>Task 2 · Topics 3-4</strong> in Canvas: the URL of the
+  <em>final commit</em> in your GitHub repository, for example
+  <code>https://github.com/your-username/your-repo/commit/&lt;sha&gt;</code>. The Canvas assignment
+  takes a Website URL, not a file. The repository must contain:</p>
+  <ul>
+    <li>your executed notebook <code>lastname_task2.ipynb</code>, with outputs visible,</li>
+    <li><code>requirements.txt</code>,</li>
+    <li><code>data/heart_disease.csv</code>.</li>
+  </ul>
+  <p>Do not commit the virtual-environment folder (the <code>.gitignore</code> from the starter excludes it). Every
+  "Report in your notebook" item above must be visible in the notebook, as printed output or as a markdown cell. A notebook
+  committed without its outputs is graded on what it shows and loses the reproducibility point.</p>
+
+  <h3>Put your project on GitHub</h3>
+  <ol>
+    <li>On github.com create a new <strong>empty</strong> repository: no README, no
+    <code>.gitignore</code>, no licence, because you already have your own history. Private is fine.</li>
+    <li>If it is private: <em>Settings → Collaborators → Add people</em>, and add
+    <code>unreal-kz</code> <strong>before the deadline</strong>. Without that the instructor sees a
+    404 and cannot grade the task.</li>
+    <li>Connect your local repository and push it:
+      <pre><code>git remote add origin https://github.com/your-username/your-repo.git
+git push -u origin main</code></pre>
+    </li>
+    <li>After your last commit run <code>git push</code>, open the repository on GitHub, click the
+    latest commit, and copy the URL from the address bar. Paste it into the Website URL box of the
+    Canvas assignment.</li>
+  </ol>
+  <div class="callout note">
+    Submit the commit link, not just the repository address: it fixes exactly what your work looked
+    like at that commit. Commits pushed after the deadline are not graded.
+  </div>
+
+  <h2>Grading — 25 points</h2>
+  <table>
+    <thead><tr><th>Part</th><th>Pts</th><th>Full marks require</th></tr></thead>
+    <tbody>
+      <tr><td>1 · By hand</td><td>4</td><td>parent entropy correct, with the working shown (1); all four root gains correct with working and the root named (2); gains inside the impure branch, the right feature chosen and a valid explanation of why a zero-gain feature can win there (1)</td></tr>
+      <tr><td>2 · From scratch</td><td>6</td><td><code>entropy</code> and <code>information_gain</code> reproduce the Part 1 values (1); <code>best_split</code> uses midpoint thresholds, respects <code>min_samples_leaf</code> and returns the best split (2); <code>build_tree</code> and <code>predict_tree</code> work with <code>max_depth</code> and <code>min_samples_leaf</code> and follow the leaf rules (2); the comparison with scikit-learn is reported (root split, agreement for depths 1–5 and unlimited) and any disagreement is explained (1)</td></tr>
+      <tr><td>3 · Depth</td><td>6</td><td>depth sweep with train accuracy, CV accuracy, CV std and leaves computed on the training split only (2); labelled plot with error bars (1); selection rule stated and applied, using the fold spread (1); <code>min_samples_leaf</code> sweep with a comparison of the two brakes (1); test accuracy computed once, with its standard error (1)</td></tr>
+      <tr><td>4 · Comparison</td><td>5</td><td>CV table for three models on the same folds, with the scaler inside a pipeline (1); scaling experiment with the agreement fraction and a correct explanation (1); hold-out accuracy, F1 and confusion matrices for both models (1); a conclusion supported by the fold spread and the test standard error, with no winner declared on a difference inside the noise (2)</td></tr>
+      <tr><td>5 · Reading &amp; reproducibility</td><td>4</td><td>two rules in plain English with leaf counts (1); five importances and one valid limitation (1); correct explanation of a split whose children predict the same class (1); versions printed, <code>SEED</code> stated, notebook runs top to bottom, the executed notebook and <code>requirements.txt</code> are in the repository at the submitted commit, at least three commits (1)</td></tr>
+    </tbody>
+    <tfoot><tr><td>Total</td><td>25</td><td>&nbsp;</td></tr></tfoot>
+  </table>
+
+  <footer>
+    MOP 3231 · Machine Learning (Python) — Narxoz University ·
+    4 contact + 6 SSS + 2 SSSL hours ·
+    Instructor contact: baubek.ukibassov@narxoz.kz
+  </footer>
+
+</div>
+</body>
+</html>
